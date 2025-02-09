@@ -1,0 +1,35 @@
+#!/bin/bash
+
+MQTT_BROKER="localhost"
+MQTT_PORT="1883"
+MQTT_TOPIC_SUB="mender/update/response"
+MQTT_TOPIC_PUB="mender/update/enter"
+
+mqtt_wait_for_response() {
+    mosquitto_pub -h $MQTT_BROKER -p $MQTT_PORT -t $MQTT_TOPIC_PUB -m "download"
+    RESPONSE=$(mosquitto_sub -h $MQTT_BROKER -p $MQTT_PORT -t $MQTT_TOPIC_SUB -C 1 -W 60)
+    if [[ "$RESPONSE" == '0' ]]; then
+        echo "[Update] Response -> $RESPONSE"
+        return 0
+    elif [[ "$RESPONSE" == '21' ]]; then
+        echo "[Update] Retry Response"
+        return 21
+    else
+        echo "[Update] Invalid / No Response"
+        return 1
+    fi
+}
+
+mqtt_wait_for_response
+response=$?
+
+if [[ $response -eq 0 ]]; then
+    echo "[Update] Proceed"
+    exit 0
+elif [[ $response -eq 21 ]]; then
+    echo "[Update] Retry Later"
+    exit 21
+else
+    echo "[Update] Drop"
+    exit 1
+fi

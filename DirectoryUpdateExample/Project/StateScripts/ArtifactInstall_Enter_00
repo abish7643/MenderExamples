@@ -1,0 +1,6 @@
+#!/bin/bash
+
+echo "Script Running before installing Directory"
+
+exit 0
+
